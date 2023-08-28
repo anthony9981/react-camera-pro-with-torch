@@ -1,7 +1,7 @@
 ![npm][npm-badge]
 ![downloads][downloads-badge]
 
-# react-camera-pro
+# react-camera-pro-with-torch
 
 Universal Camera component for React.
 
@@ -21,11 +21,13 @@ Note: WebRTC is only supported on secure connections. So you need to serve it fr
 - taking photo to base64 jpeg file - with same aspect Ratio as view, with FullHD resolution (or maximum supported by camera).
 - working with standard webcams or other video input devices
 - supports autofocus
+- supports torch
 - switching facing/environment cameras (with your own button)
 - detect number of cameras
 - facing camera is mirrored, environment is not
 - controlled by react [Ref](https://reactjs.org/docs/refs-and-the-dom.html)
 - public functions to take photo, to switch camera and to get number of cameras
+- function to switch flash on/off
 - typescript library
 
 ## Installation
@@ -36,7 +38,7 @@ npm install --save react-camera-pro
 
 ## Demo
 
-https://purple-technology.github.io/react-camera-pro/
+<!-- https://purple-technology.github.io/react-camera-pro/ -->
 
 ## Example
 
@@ -87,6 +89,7 @@ errorMessages: {
 ```
 
 Default:
+
 ```
   {
     noCameraAccessible: 'No camera device accessible. Please connect your camera or try a different browser.',
@@ -102,10 +105,12 @@ Default:
 - `takePhoto(): string` - Returns a base64 encoded string of the taken image.
 - `switchCamera(): 'user'|'environment'` - Switches the camera - user to environment or environment to user. Returns the new value 'user' or 'environment'.
 - `getNumberOfCameras(): number` - Returns number of available cameras.
+- `toggleTorch(): void` - Toggles between on and off state of torch.
+- `flashStatus(): Boolean` - Returns if torch is supported by the current stream or not.
 
-[See demo](https://purple-technology.github.io/react-camera-pro/)
+<!-- [See demo](https://purple-technology.github.io/react-camera-pro/) -->
 
-[See example code](https://github.com/purple-technology/react-camera-pro/blob/8290b1319d7436c77403784fe845060f6c4ed3bd/example/src/App.tsx#L120)
+<!-- [See example code](https://github.com/purple-technology/react-camera-pro/blob/8290b1319d7436c77403784fe845060f6c4ed3bd/example/src/App.tsx#L120) -->
 
 ```javascript
 
@@ -131,6 +136,27 @@ const Component = () => {
           camera.current.switchCamera();
         }}
       />
+
+      {camera?.current?.flashStatus() ? (
+        <button  onClick={()=>{
+          if (camera?.current) {
+            camera.current.toggleTorch();
+          }}}>
+          {/*Lightning Icon*/}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width={20}
+            height={20}
+            viewBox="0 0 16 16"
+            fill="#00000"
+          >
+            <path d="M11.251.068a.5.5 0 0 1 .227.58L9.677 6.5H13a.5.5 0 0 1 .364.843l-8 8.5a.5.5 0 0 1-.842-.49L6.323 9.5H3a.5.5 0 0 1-.364-.843l8-8.5a.5.5 0 0 1 .615-.09zM4.157 8.5H7a.5.5 0 0 1 .478.647L6.11 13.59l5.732-6.09H9a.5.5 0 0 1-.478-.647L9.89 2.41 4.157 8.5z" />
+          </svg>
+        </button>
+      ) : (
+        ''
+      )}
+
   )
 ```
 
