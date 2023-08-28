@@ -6,6 +6,8 @@ export declare type SetStream = React.Dispatch<React.SetStateAction<Stream>>;
 export declare type SetNumberOfCameras = React.Dispatch<React.SetStateAction<number>>;
 export declare type SetNotSupported = React.Dispatch<React.SetStateAction<boolean>>;
 export declare type SetPermissionDenied = React.Dispatch<React.SetStateAction<boolean>>;
+export declare type SetTorchSupported = React.Dispatch<React.SetStateAction<boolean>>;
+export declare type SetTorchOnOff = React.Dispatch<React.SetStateAction<boolean>>;
 export interface CameraProps {
     facingMode?: FacingMode;
     aspectRatio?: AspectRatio;
@@ -23,4 +25,6 @@ export declare type CameraType = React.ForwardRefExoticComponent<CameraProps & R
     takePhoto(): string;
     switchCamera(): FacingMode;
     getNumberOfCameras(): number;
+    toggleTorch(): void;
+    flashStatus(): Boolean;
 };
