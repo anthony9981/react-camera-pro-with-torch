@@ -36,7 +36,7 @@ Note: WebRTC is only supported on secure connections. So you need to serve it fr
 npm install --save react-camera-pro
 ```
 
-## Demo
+<!-- ## Demo -->
 
 <!-- https://purple-technology.github.io/react-camera-pro/ -->
 
