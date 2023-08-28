@@ -33,7 +33,7 @@ Note: WebRTC is only supported on secure connections. So you need to serve it fr
 ## Installation
 
 ```
-npm install --save react-camera-pro
+npm install --save react-camera-pro-with-torch
 ```
 
 <!-- ## Demo -->
@@ -48,7 +48,7 @@ https://github.com/purple-technology/react-camera-pro/blob/master/example/src/Ap
 
 ```javascript
 import React, { useState, useRef } from "react";
-import {Camera} from "react-camera-pro";
+import {Camera} from "react-camera-pro-with-torch";
 
 const Component = () => {
   const camera = useRef(null);
@@ -189,5 +189,5 @@ const Cam = () => <Camera ref={camera} aspectRatio={16 / 9} />;
 
 MIT
 
-[downloads-badge]: https://img.shields.io/npm/dw/react-camera-pro.svg?style=flat-square
-[npm-badge]: https://img.shields.io/npm/v/react-camera-pro
+[downloads-badge]: https://img.shields.io/npm/dw/react-camera-pro-with-torch.svg?style=flat-square
+[npm-badge]: https://img.shields.io/npm/v/react-camera-pro-with-torch
