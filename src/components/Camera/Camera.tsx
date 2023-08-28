@@ -7,6 +7,8 @@ import {
   SetNumberOfCameras,
   SetNotSupported,
   SetPermissionDenied,
+  SetTorchSupported,
+  SetTorchOnOff,
 } from './types';
 import { Container, Wrapper, Canvas, Cam, ErrorMsg } from './styles';
 
@@ -36,6 +38,8 @@ export const Camera = React.forwardRef<unknown, CameraProps>(
     const [currentFacingMode, setFacingMode] = useState<FacingMode>(facingMode);
     const [notSupported, setNotSupported] = useState<boolean>(false);
     const [permissionDenied, setPermissionDenied] = useState<boolean>(false);
+    const [torchsupported, setTorchSupported] = useState<boolean>(false);
+    const [isTorchOn, setTorchOnOff] = useState<boolean>(false);
 
     useEffect(() => {
       numberOfCamerasCallback(numberOfCameras);
@@ -97,6 +101,25 @@ export const Camera = React.forwardRef<unknown, CameraProps>(
       getNumberOfCameras: () => {
         return numberOfCameras;
       },
+      toggleTorch: () => {
+        const currentTrack = stream?.getVideoTracks()[0] || stream?.getTracks()[0];
+        
+        if (torchsupported) {
+          const torchValue = isTorchOn ? false : true;
+      
+          currentTrack?.applyConstraints({
+            advanced: [{ torch: torchValue }],
+          } as MediaTrackConstraintSet);
+      
+          setTorchOnOff(torchValue);
+        } else {
+          console.log("Torch not supported");
+        }
+      }
+      ,
+      flashStatus: ()=>{
+        return torchsupported? true: false;
+      }
     }));
 
     useEffect(() => {
@@ -108,8 +131,10 @@ export const Camera = React.forwardRef<unknown, CameraProps>(
         setNumberOfCameras,
         setNotSupported,
         setPermissionDenied,
+        setTorchSupported,
+        setTorchOnOff,
       );
-    }, [currentFacingMode, videoSourceDeviceId]);
+    }, [currentFacingMode, setTorchSupported, setTorchOnOff, videoSourceDeviceId]);
 
     useEffect(() => {
       if (stream && player && player.current) {
@@ -157,6 +182,8 @@ const initCameraStream = (
   setNumberOfCameras: SetNumberOfCameras,
   setNotSupported: SetNotSupported,
   setPermissionDenied: SetPermissionDenied,
+  setTorchSupported: SetTorchSupported,
+  setTorchOnOff: SetTorchOnOff,
 ) => {
   // stop any active streams in the window
   if (stream) {
@@ -170,18 +197,21 @@ const initCameraStream = (
     video: {
       deviceId: videoSourceDeviceId ? { exact: videoSourceDeviceId } : undefined,
       facingMode: currentFacingMode,
-      width: { ideal: 1920 },
-      height: { ideal: 1920 },
+      width: { ideal: 1080 },
+      height: { ideal: 1080 },
     },
   };
 
   if (navigator?.mediaDevices?.getUserMedia) {
     navigator.mediaDevices
       .getUserMedia(constraints)
-      .then(stream => {
+      .then(async stream => {
+        const result = await checkTorchExists(navigator?.mediaDevices, stream)
+        setTorchSupported(result);
+        setTorchOnOff(result);
         setStream(handleSuccess(stream, setNumberOfCameras));
       })
-      .catch(err => {
+      .catch((err) => {
         handleError(err, setNotSupported, setPermissionDenied);
       });
   } else {
@@ -191,13 +221,17 @@ const initCameraStream = (
       navigator.mozGetUserMedia ||
       navigator.mozGetUserMedia ||
       navigator.msGetUserMedia;
+     
     if (getWebcam) {
       getWebcam(
         constraints,
-        stream => {
+        async stream => {
+          const result = await checkTorchExists(getWebcam, stream)
+          setTorchSupported(result);
+          setTorchOnOff(result);
           setStream(handleSuccess(stream, setNumberOfCameras));
         },
-        err => {
+        (err) => {
           handleError(err as Error, setNotSupported, setPermissionDenied);
         },
       );
@@ -213,6 +247,23 @@ const handleSuccess = (stream: MediaStream, setNumberOfCameras: SetNumberOfCamer
     .then(r => setNumberOfCameras(r.filter(i => i.kind === 'videoinput').length));
 
   return stream;
+};
+
+async function checkTorchExists(device: any, stream: MediaStream){
+  const supportedConstraints = device?.getSupportedConstraints() ;
+  let track = stream.getTracks()[0];
+  if (supportedConstraints && 'torch' in supportedConstraints && track && track.applyConstraints) {
+    try {
+      await track.applyConstraints({ advanced: [{ torch: true }] } as MediaTrackConstraintSet);
+      return true;
+    } catch (error) {
+      console.log("Torch constraint is not supported.");
+      return false;
+    }
+  } else {
+    console.log("Torch constraint is not supported.");
+    return false;
+  }
 };
 
 const handleError = (error: Error, setNotSupported: SetNotSupported, setPermissionDenied: SetPermissionDenied) => {
