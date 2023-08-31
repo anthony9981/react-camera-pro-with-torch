@@ -131,8 +131,8 @@ const App = () => {
   const [image, setImage] = useState<string | null>(null);
   const [showImage, setShowImage] = useState<boolean>(false);
   const camera = useRef<CameraType>(null);
+  const [flashStatus, setFlashStatus]=useState<boolean>(false);
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
-  const [activeDeviceId, setActiveDeviceId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     (async () => {
@@ -154,9 +154,11 @@ const App = () => {
       ) : (
         <Camera
           ref={camera}
-          aspectRatio={4 / 3}
-          numberOfCamerasCallback={(i) => setNumberOfCameras(i)}
-          videoSourceDeviceId={activeDeviceId}
+          facingMode='back'
+          aspectRatio={1.78}
+          numberOfFrontCamerasCallback={(i) => setNumberOfCameras(i)}
+          // numberOfBackCamerasCallback={(i) => setNumberOfCameras(i)}
+          pictureQuality={1}
           errorMessages={{
             noCameraAccessible: 'No camera device accessible. Please connect your camera or try a different browser.',
             permissionDenied: 'Permission denied. Please refresh and give camera permission.',
@@ -192,7 +194,7 @@ const App = () => {
         ''
       )}
       <Control>
-        <select
+        {/* <select
           onChange={(event) => {
             setActiveDeviceId(event.target.value);
           }}
@@ -202,7 +204,7 @@ const App = () => {
               {d.label}
             </option>
           ))}
-        </select>
+        </select> */}
         <ImagePreview
           image={image}
           onClick={() => {
@@ -213,17 +215,17 @@ const App = () => {
           onClick={() => {
             if (camera.current) {
               const photo = camera.current.takePhoto();
-              console.log(photo);
+              // console.log(photo);
               setImage(photo);
             }
           }}
         />
         <ChangeFacingCameraButton
-          disabled={numberOfCameras <= 1}
+          disabled={numberOfCameras < 2}
           onClick={() => {
             if (camera.current) {
               const result = camera.current.switchCamera();
-              console.log(result);
+              // setFlashStatus(result);
             }
           }}
         />

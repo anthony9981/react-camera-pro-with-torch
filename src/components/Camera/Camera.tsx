@@ -4,21 +4,28 @@ import {
   FacingMode,
   Stream,
   SetStream,
-  SetNumberOfCameras,
   SetNotSupported,
   SetPermissionDenied,
   SetTorchSupported,
   SetTorchOnOff,
+  SetFrontCameras,
+  SetBackCameras,
+  SetNumberOfFrontCameras,
+  SetNumberOfBackCameras,
+  PictureQuality
 } from './types';
+import { createPictureQuality } from './utils';
 import { Container, Wrapper, Canvas, Cam, ErrorMsg } from './styles';
 
 export const Camera = React.forwardRef<unknown, CameraProps>(
   (
     {
-      facingMode = 'user',
+      facingMode = 'front',
       aspectRatio = 'cover',
-      numberOfCamerasCallback = () => null,
-      videoSourceDeviceId = undefined,
+      // numberOfCamerasCallback = () => null,
+      numberOfFrontCamerasCallback = () => null,
+      numberOfBackCamerasCallback = () => null,
+      pictureQuality = 0.9,
       errorMessages = {
         noCameraAccessible: 'No camera device accessible. Please connect your camera or try a different browser.',
         permissionDenied: 'Permission denied. Please refresh and give camera permission.',
@@ -33,108 +40,210 @@ export const Camera = React.forwardRef<unknown, CameraProps>(
     const player = useRef<HTMLVideoElement>(null);
     const canvas = useRef<HTMLCanvasElement>(null);
     const container = useRef<HTMLDivElement>(null);
-    const [numberOfCameras, setNumberOfCameras] = useState<number>(0);
+    // const [numberOfCameras, setNumberOfCameras] = useState<number>(0);
+    const [numberOffrontCameras, setNumberOfFrontCameras] = useState<number>(0);
+    const [numberOfbackCameras, setNumberOfBackCameras] = useState<number>(0);
     const [stream, setStream] = useState<Stream>(null);
     const [currentFacingMode, setFacingMode] = useState<FacingMode>(facingMode);
     const [notSupported, setNotSupported] = useState<boolean>(false);
     const [permissionDenied, setPermissionDenied] = useState<boolean>(false);
     const [torchsupported, setTorchSupported] = useState<boolean>(false);
     const [isTorchOn, setTorchOnOff] = useState<boolean>(false);
+    const [frontCameras, setFrontCameras] = useState<MediaDeviceInfo[]>([]);
+    const [backCameras, setBackCameras] = useState<MediaDeviceInfo[]>([]);
+    const [activeDeviceId, setActiveDeviceId] = useState<string | undefined>(undefined);
+    const torchSupportedRef = useRef<boolean>(false);
+
 
     useEffect(() => {
-      numberOfCamerasCallback(numberOfCameras);
-    }, [numberOfCameras]);
+      numberOfFrontCamerasCallback(numberOffrontCameras);
+    }, [numberOffrontCameras]);
+
+    useEffect(() => {
+      numberOfBackCamerasCallback(numberOfbackCameras);
+    }, [numberOfbackCameras]);
 
     useImperativeHandle(ref, () => ({
       takePhoto: () => {
-        if (numberOfCameras < 1) {
-          throw new Error(errorMessages.noCameraAccessible);
-        }
+        if (facingMode==='front'){
+          if (numberOffrontCameras < 1) {
+            throw new Error(errorMessages.noCameraAccessible);
+          }
+  
+          if (canvas?.current) {
+            const playerWidth = player?.current?.videoWidth || 1280;
+            const playerHeight = player?.current?.videoHeight || 720;
+            const playerAR = playerWidth / playerHeight;
+  
+            const canvasWidth = container?.current?.offsetWidth || 1280;
+            const canvasHeight = container?.current?.offsetHeight || 1280;
+            const canvasAR = canvasWidth / canvasHeight;
+  
+            let sX, sY, sW, sH;
+  
+            if (playerAR > canvasAR) {
+              sH = playerHeight;
+              sW = playerHeight * canvasAR;
+              sX = (playerWidth - sW) / 2;
+              sY = 0;
+            } else {
+              sW = playerWidth;
+              sH = playerWidth / canvasAR;
+              sX = 0;
+              sY = (playerHeight - sH) / 2;
+            }
+  
+            canvas.current.width = sW;
+            canvas.current.height = sH;
+  
+            const context = canvas.current.getContext('2d');
+            if (context && player?.current) {
+              context.drawImage(player.current, sX, sY, sW, sH, 0, 0, sW, sH);
+            }
 
-        if (canvas?.current) {
-          const playerWidth = player?.current?.videoWidth || 1280;
-          const playerHeight = player?.current?.videoHeight || 720;
-          const playerAR = playerWidth / playerHeight;
-
-          const canvasWidth = container?.current?.offsetWidth || 1280;
-          const canvasHeight = container?.current?.offsetHeight || 1280;
-          const canvasAR = canvasWidth / canvasHeight;
-
-          let sX, sY, sW, sH;
-
-          if (playerAR > canvasAR) {
-            sH = playerHeight;
-            sW = playerHeight * canvasAR;
-            sX = (playerWidth - sW) / 2;
-            sY = 0;
+            const quality: PictureQuality = createPictureQuality(0.8);
+            const imgData = canvas.current.toDataURL('image/jpeg', quality);
+            return imgData;
           } else {
-            sW = playerWidth;
-            sH = playerWidth / canvasAR;
-            sX = 0;
-            sY = (playerHeight - sH) / 2;
+            throw new Error(errorMessages.canvas);
           }
-
-          canvas.current.width = sW;
-          canvas.current.height = sH;
-
-          const context = canvas.current.getContext('2d');
-          if (context && player?.current) {
-            context.drawImage(player.current, sX, sY, sW, sH, 0, 0, sW, sH);
+        }else{
+          if (numberOfbackCameras < 1) {
+            throw new Error(errorMessages.noCameraAccessible);
           }
-
-          const imgData = canvas.current.toDataURL('image/jpeg');
-          return imgData;
-        } else {
-          throw new Error(errorMessages.canvas);
+  
+          if (canvas?.current) {
+            const playerWidth = player?.current?.videoWidth || 1280;
+            const playerHeight = player?.current?.videoHeight || 720;
+            const playerAR = playerWidth / playerHeight;
+  
+            const canvasWidth = container?.current?.offsetWidth || 1280;
+            const canvasHeight = container?.current?.offsetHeight || 1280;
+            const canvasAR = canvasWidth / canvasHeight;
+  
+            let sX, sY, sW, sH;
+  
+            if (playerAR > canvasAR) {
+              sH = playerHeight;
+              sW = playerHeight * canvasAR;
+              sX = (playerWidth - sW) / 2;
+              sY = 0;
+            } else {
+              sW = playerWidth;
+              sH = playerWidth / canvasAR;
+              sX = 0;
+              sY = (playerHeight - sH) / 2;
+            }
+  
+            canvas.current.width = sW;
+            canvas.current.height = sH;
+  
+            const context = canvas.current.getContext('2d');
+            if (context && player?.current) {
+              context.drawImage(player.current, sX, sY, sW, sH, 0, 0, sW, sH);
+            }
+  
+            const quality: PictureQuality = createPictureQuality(pictureQuality);
+            const imgData = canvas.current.toDataURL('image/jpeg', quality);
+            return imgData;
+          } else {
+            throw new Error(errorMessages.canvas);
+          }
         }
       },
       switchCamera: () => {
-        if (numberOfCameras < 1) {
-          throw new Error(errorMessages.noCameraAccessible);
-        } else if (numberOfCameras < 2) {
-          console.error('Error: Unable to switch camera. Only one device is accessible.'); // console only
+        if (facingMode === 'front') {
+          if (numberOffrontCameras < 1) {
+            throw new Error(errorMessages.noCameraAccessible);
+          } else if (numberOffrontCameras < 2) {
+            console.error('Error: Unable to switch camera. Only one device is accessible.'); // console only
+          }
+          togglebetweencameras('front');
+          console.log('Is Torch supported?: ', torchSupportedRef.current);
+          return torchsupported;
+        } else {
+          if (numberOfbackCameras < 1) {
+            throw new Error(errorMessages.noCameraAccessible);
+          } else if (numberOfbackCameras < 2) {
+            console.error('Error: Unable to switch camera. Only one device is accessible.'); // console only
+          }
+          togglebetweencameras('back');
+          console.log('Is Torch supported?: ', torchSupportedRef.current);
+          return torchsupported;
         }
-        const newFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
-        setFacingMode(newFacingMode);
-        return newFacingMode;
-      },
-      getNumberOfCameras: () => {
-        return numberOfCameras;
       },
       toggleTorch: () => {
         const currentTrack = stream?.getVideoTracks()[0] || stream?.getTracks()[0];
-        
+
         if (torchsupported) {
           const torchValue = isTorchOn ? false : true;
-      
+
           currentTrack?.applyConstraints({
             advanced: [{ torch: torchValue }],
           } as MediaTrackConstraintSet);
-      
+
           setTorchOnOff(torchValue);
         } else {
-          console.log("Torch not supported");
+          console.log('Torch not supported');
         }
-      }
-      ,
+      },
       flashStatus: ()=>{
-        return torchsupported? true: false;
-      }
+        return torchsupported;
+      },
     }));
+
+    function togglebetweencameras(frontback: string) {
+      if (frontback === 'front') {
+        console.log('Hello! I am in front.');
+        setActiveDeviceId((prevCameraId) => {
+          const currentIndex = frontCameras.findIndex((device) => device.deviceId === prevCameraId);
+          console.log(currentIndex);
+          console.log(frontCameras);
+          if (currentIndex < 0) {
+            let nextIndex = Math.abs(currentIndex);
+            return frontCameras[nextIndex]?.deviceId || '';
+          } else {
+            let nextIndex = (currentIndex + 1) % frontCameras.length;
+            return frontCameras[nextIndex]?.deviceId || '';
+          }
+        });
+      } else {
+        console.log('Hello! I am in back.');
+        setActiveDeviceId((prevCameraId) => {
+          const currentIndex = backCameras.findIndex((device) => device.deviceId === prevCameraId);
+          console.log(currentIndex);
+          console.log(backCameras);
+          if (currentIndex < 0) {
+            let nextIndex = Math.abs(currentIndex);
+            return backCameras[nextIndex]?.deviceId || '';
+          } else {
+            let nextIndex = (currentIndex + 1) % backCameras.length;
+            return backCameras[nextIndex]?.deviceId || '';
+          }
+        });
+      }
+    }
+    
+    useEffect(()=>{
+      torchSupportedRef.current = torchsupported;
+    },[torchsupported])
 
     useEffect(() => {
       initCameraStream(
         stream,
         setStream,
-        currentFacingMode,
-        videoSourceDeviceId,
-        setNumberOfCameras,
+        facingMode,
+        activeDeviceId,
+        setNumberOfFrontCameras,
+        setNumberOfBackCameras,
         setNotSupported,
         setPermissionDenied,
         setTorchSupported,
         setTorchOnOff,
+        setFrontCameras,
+        setBackCameras,
       );
-    }, [currentFacingMode, setTorchSupported, setTorchOnOff, videoSourceDeviceId]);
+    }, [facingMode, activeDeviceId]);
 
     useEffect(() => {
       if (stream && player && player.current) {
@@ -142,7 +251,7 @@ export const Camera = React.forwardRef<unknown, CameraProps>(
       }
       return () => {
         if (stream) {
-          stream.getTracks().forEach(track => {
+          stream.getTracks().forEach((track) => {
             track.stop();
           });
         }
@@ -160,7 +269,7 @@ export const Camera = React.forwardRef<unknown, CameraProps>(
             muted={true}
             autoPlay={true}
             playsInline={true}
-            mirrored={currentFacingMode === 'user' ? true : false}
+            mirrored={currentFacingMode === 'front' ? true : false}
             onLoadedData={() => {
               videoReadyCallback();
             }}
@@ -179,11 +288,14 @@ const initCameraStream = (
   setStream: SetStream,
   currentFacingMode: FacingMode,
   videoSourceDeviceId: string | undefined,
-  setNumberOfCameras: SetNumberOfCameras,
+  setNumberOfFrontCameras:SetNumberOfFrontCameras,
+  setNumberOfBackCameras: SetNumberOfBackCameras, 
   setNotSupported: SetNotSupported,
   setPermissionDenied: SetPermissionDenied,
   setTorchSupported: SetTorchSupported,
   setTorchOnOff: SetTorchOnOff,
+  setFrontCameras: SetFrontCameras,
+  setBackCameras: SetBackCameras,
 ) => {
   // stop any active streams in the window
   if (stream) {
@@ -196,9 +308,9 @@ const initCameraStream = (
     audio: false,
     video: {
       deviceId: videoSourceDeviceId ? { exact: videoSourceDeviceId } : undefined,
-      facingMode: currentFacingMode,
-      width: { ideal: 1080 },
-      height: { ideal: 1080 },
+      facingMode: currentFacingMode==='front'?'user':'environment',
+      width: { ideal: 1920 },
+      height: { ideal: 1920 },
     },
   };
 
@@ -209,7 +321,7 @@ const initCameraStream = (
         const result = await checkTorchExists(navigator?.mediaDevices, stream)
         setTorchSupported(result);
         setTorchOnOff(result);
-        setStream(handleSuccess(stream, setNumberOfCameras));
+        setStream(await handleSuccess(stream, setNumberOfFrontCameras, setNumberOfBackCameras, setFrontCameras, setBackCameras));
       })
       .catch((err) => {
         handleError(err, setNotSupported, setPermissionDenied);
@@ -229,7 +341,7 @@ const initCameraStream = (
           const result = await checkTorchExists(getWebcam, stream)
           setTorchSupported(result);
           setTorchOnOff(result);
-          setStream(handleSuccess(stream, setNumberOfCameras));
+          setStream(await handleSuccess(stream, setNumberOfFrontCameras, setNumberOfBackCameras, setFrontCameras, setBackCameras));
         },
         (err) => {
           handleError(err as Error, setNotSupported, setPermissionDenied);
@@ -241,10 +353,25 @@ const initCameraStream = (
   }
 };
 
-const handleSuccess = (stream: MediaStream, setNumberOfCameras: SetNumberOfCameras) => {
-  navigator.mediaDevices
-    .enumerateDevices()
-    .then(r => setNumberOfCameras(r.filter(i => i.kind === 'videoinput').length));
+const handleSuccess = async (stream: MediaStream, setNumberOfFrontCameras: SetNumberOfFrontCameras, setNumberOfBackCameras: SetNumberOfBackCameras, setFrontCameras: SetFrontCameras, setBackCameras: SetBackCameras) => {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const videoDevices = devices.filter(device => device.kind === 'videoinput' || 'video');
+    
+    const frontDevices = videoDevices.filter(device =>
+      device.label.toLowerCase().includes('front')
+    );
+    setFrontCameras(frontDevices);
+    setNumberOfFrontCameras(frontDevices.length);
+
+    const backDevices = videoDevices.filter(device =>
+      device.label.toLowerCase().includes('back')
+    );
+    setBackCameras(backDevices);
+    setNumberOfBackCameras(backDevices.length);
+  } catch (error) {
+    console.error('Error enumerating devices:', error);
+  }
 
   return stream;
 };
@@ -252,15 +379,21 @@ const handleSuccess = (stream: MediaStream, setNumberOfCameras: SetNumberOfCamer
 async function checkTorchExists(device: any, stream: MediaStream){
   const supportedConstraints = device?.getSupportedConstraints() ;
   let track = stream.getTracks()[0];
-  if (supportedConstraints && 'torch' in supportedConstraints && track && track.applyConstraints) {
-    try {
-      await track.applyConstraints({ advanced: [{ torch: true }] } as MediaTrackConstraintSet);
-      return true;
-    } catch (error) {
+  try{
+    if (supportedConstraints && 'torch' in supportedConstraints && track && track.applyConstraints) {
+      try {
+        await track.applyConstraints({ advanced: [{ torch: true }] } as MediaTrackConstraintSet);
+        console.log("Torch constraint is supported.");
+        return true;
+      } catch (error) {
+        console.log("Torch constraint is not supported.");
+        return false;
+      }
+    } else {
       console.log("Torch constraint is not supported.");
       return false;
     }
-  } else {
+  }catch{
     console.log("Torch constraint is not supported.");
     return false;
   }

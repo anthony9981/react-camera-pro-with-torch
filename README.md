@@ -19,12 +19,13 @@ Note: WebRTC is only supported on secure connections. So you need to serve it fr
   - you can setup parameter to cover your container
   - you can define aspectRatio of view: 16/9, 4/3, 1/1, ...
 - taking photo to base64 jpeg file - with same aspect Ratio as view, with FullHD resolution (or maximum supported by camera).
+- set quality of the photo taken as well.
 - working with standard webcams or other video input devices
 - supports autofocus
 - supports torch
-- switching facing/environment cameras (with your own button)
-- detect number of cameras
-- facing camera is mirrored, environment is not
+- switching between the different front and back cameras.
+- detect number of front or back cameras.
+- facing camera is mirrored, back is not.
 - controlled by react [Ref](https://reactjs.org/docs/refs-and-the-dom.html)
 - public functions to take photo, to switch camera and to get number of cameras
 - function to switch flash on/off
@@ -68,12 +69,14 @@ export Component;
 
 ### Props
 
-| prop                    | type                             | default      | notes                                          |
-| ----------------------- | -------------------------------- | ------------ | ---------------------------------------------- |
-| facingMode              | `'user'\|'environment'`          | `'user'`     | default camera - 'user' or 'environment'       |
-| aspectRatio             | `'cover'\|number`                | `'cover'`    | aspect ratio of video (16/9, 4/3);             |
-| numberOfCamerasCallback | `(numberOfCameras: number):void` | `() => null` | callback is called if number of cameras change |
-| errorMessages           | `object?` see below              | see below    | Error messages object (optional)               |
+| prop                         | type                                  | default      | notes                                          |
+| -----------------------      | ------------------------------------- | ------------ | ---------------------------------------------- |
+| facingMode                   | `'front'\|'back'`                     | `'front'`    | default camera - 'front'                       |
+| aspectRatio                  | `'cover'\|number`                     | `'cover'`    | aspect ratio of video (16/9, 4/3);             |
+| numberOfFrontCamerasCallback | `(numberOffrontCameras: number):void` | `() => null` | callback is called if number of cameras change |
+| numberOfBackCamerasCallback  | `(numberOfbackCameras: number):void`  | `() => null` | callback is called if number of cameras change |
+| errorMessages                | `object?` see below                   | see below    | Error messages object (optional)               |
+| pictureQuality               | `number`                              | `0.9`        | number between 0 and 1, sets the image quality |
 
 #### Error messages (prop errorMessages)
 
@@ -103,8 +106,7 @@ Default:
 ### Methods
 
 - `takePhoto(): string` - Returns a base64 encoded string of the taken image.
-- `switchCamera(): 'user'|'environment'` - Switches the camera - user to environment or environment to user. Returns the new value 'user' or 'environment'.
-- `getNumberOfCameras(): number` - Returns number of available cameras.
+- `switchCamera(): void` - Switches between the different cameras of the device depending on if chosen 'front' or 'back' in `facingMode` prop.
 - `toggleTorch(): void` - Toggles between on and off state of torch.
 - `flashStatus(): Boolean` - Returns if torch is supported by the current stream or not.
 
@@ -118,11 +120,24 @@ const Component = () => {
   const camera = useRef(null);
   const [numberOfCameras, setNumberOfCameras] = useState(0);
   const [image, setImage] = useState(null);
+  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
 
-  //...
+  //You need to add a useEffect hook to get the latest state change associated with flashStatus, otherwise
+  //because of how useImperativeHandle is implemented, it will always give you the last state, not the current one which has been updated.
+  //Slight inconvenience, if you know how to fix it, you can do a pull request.
+  //Will highly appreciate it. Below useEffect hook does this!
+
+
+  useEffect(() => {
+    (async () => {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter((i) => i.kind == 'videoinput');
+      setDevices(videoDevices);
+    })();
+  });
 
   return (
-    <Camera ref={camera} numberOfCamerasCallback={setNumberOfCameras} />
+    <Camera ref={camera} facingMode='front' numberOfFrontCamerasCallback={setNumberOfCameras} />
       <img src={image} alt='Image preview' />
       <button
         onClick={() => {
@@ -131,7 +146,7 @@ const Component = () => {
         }}
       />
       <button
-        hidden={numberOfCameras <= 1}
+        hidden={numberOfCameras < 2}
         onClick={() => {
           camera.current.switchCamera();
         }}
@@ -162,10 +177,10 @@ const Component = () => {
 
 ## Camera options
 
-### User/Enviroment camera
+### front/back camera
 
 ```javascript
-  const Cam = () => <Camera ref={camera} facingMode='environment'} />
+  const Cam = () => <Camera ref={camera} facingMode='front'} />
 ```
 
 ### Aspect ratio
