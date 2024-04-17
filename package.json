@@ -15,10 +15,10 @@
     "webRTC"
   ],
   "repository": {
-    "url": "https://github.com/Strangersknowme/react-camera-pro-with-torch/",
+    "url": "https://github.com/anthony9981/react-camera-pro-with-torch-disabled/",
     "type": "git"
   },
-  "homepage": "https://github.com/Strangersknowme/react-camera-pro-with-torch/#readme",
+  "homepage": "https://github.com/Strangersknowme/react-camera-pro-with-torch-disabled/#readme",
   "author": "Lalit",
   "license": "MIT",
   "types": "dist/index.d.ts",
