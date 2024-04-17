@@ -382,7 +382,7 @@ async function checkTorchExists(device: any, stream: MediaStream){
   try{
     if (supportedConstraints && 'torch' in supportedConstraints && track && track.applyConstraints) {
       try {
-        await track.applyConstraints({ advanced: [{ torch: true }] } as MediaTrackConstraintSet);
+        await track.applyConstraints({ advanced: [{ torch: false }] } as MediaTrackConstraintSet);
         console.log("Torch constraint is supported.");
         return true;
       } catch (error) {
