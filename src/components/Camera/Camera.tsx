@@ -370,7 +370,7 @@ const handleSuccess = async (stream: MediaStream, setNumberOfFrontCameras: SetNu
     const backDevices = videoDevices.filter(device =>
       device.label.toLowerCase().includes('back')
     );
-    if (numberOfCameras > 0 && backDevices.length === 0) {
+    if (numberOfCameras > 1 && backDevices.length === 0) {
       backDevices.push(videoDevices[1]);
     }
     setBackCameras(backDevices);
