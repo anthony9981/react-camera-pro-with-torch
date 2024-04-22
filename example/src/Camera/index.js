@@ -374,7 +374,7 @@ var initCameraStream = function (stream, setStream, currentFacingMode, videoSour
     }
 };
 var handleSuccess = function (stream, setNumberOfFrontCameras, setNumberOfBackCameras, setFrontCameras, setBackCameras) { return __awaiter(void 0, void 0, void 0, function () {
-    var devices, videoDevices, frontDevices, backDevices, error_1;
+    var devices, videoDevices, numberOfCameras, frontDevices, backDevices, error_1;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -383,14 +383,21 @@ var handleSuccess = function (stream, setNumberOfFrontCameras, setNumberOfBackCa
             case 1:
                 devices = _a.sent();
                 videoDevices = devices.filter(function (device) { return device.kind === 'videoinput' || 'video'; });
+                numberOfCameras = videoDevices.length;
                 frontDevices = videoDevices.filter(function (device) {
                     return device.label.toLowerCase().includes('front');
                 });
+                if (numberOfCameras > 0 && frontDevices.length === 0) {
+                    frontDevices.push(videoDevices[0]);
+                }
                 setFrontCameras(frontDevices);
                 setNumberOfFrontCameras(frontDevices.length);
                 backDevices = videoDevices.filter(function (device) {
                     return device.label.toLowerCase().includes('back');
                 });
+                if (numberOfCameras > 0 && backDevices.length === 0) {
+                    backDevices.push(videoDevices[1]);
+                }
                 setBackCameras(backDevices);
                 setNumberOfBackCameras(backDevices.length);
                 return [3 /*break*/, 3];
@@ -417,7 +424,7 @@ function checkTorchExists(device, stream) {
                     _b.label = 2;
                 case 2:
                     _b.trys.push([2, 4, , 5]);
-                    return [4 /*yield*/, track.applyConstraints({ advanced: [{ torch: true }] })];
+                    return [4 /*yield*/, track.applyConstraints({ advanced: [{ torch: false }] })];
                 case 3:
                     _b.sent();
                     console.log("Torch constraint is supported.");

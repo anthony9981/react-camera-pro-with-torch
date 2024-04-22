@@ -357,16 +357,22 @@ const handleSuccess = async (stream: MediaStream, setNumberOfFrontCameras: SetNu
   try {
     const devices = await navigator.mediaDevices.enumerateDevices();
     const videoDevices = devices.filter(device => device.kind === 'videoinput' || 'video');
-    
+    const numberOfCameras = videoDevices.length;
     const frontDevices = videoDevices.filter(device =>
       device.label.toLowerCase().includes('front')
     );
+    if (numberOfCameras > 0 && frontDevices.length === 0) {
+      frontDevices.push(videoDevices[0]);
+    }
     setFrontCameras(frontDevices);
     setNumberOfFrontCameras(frontDevices.length);
 
     const backDevices = videoDevices.filter(device =>
       device.label.toLowerCase().includes('back')
     );
+    if (numberOfCameras > 0 && backDevices.length === 0) {
+      backDevices.push(videoDevices[1]);
+    }
     setBackCameras(backDevices);
     setNumberOfBackCameras(backDevices.length);
   } catch (error) {
